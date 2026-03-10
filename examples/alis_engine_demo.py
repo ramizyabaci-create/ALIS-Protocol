@@ -1,125 +1,148 @@
 import json
 import re
 import os
+import sys
 
 class ALISEngine:
     def __init__(self):
-        self.variables = {"PI": 3.14159, "VERSION": 1.5} # Pre-defined constants
+        # The Brain: Variable Memory
+        self.variables = {
+            "__VERSION__": "2.0.0",
+            "__AUTHOR__": "ALIS Protocol Team",
+            "TRUE": True,
+            "FALSE": False
+        }
         self.registry = {}
         self.functions = {}
-        self.msgs = {}
+        self.system_messages = {}
         self.current_lang = ""
 
-    def get_msg(self, key, default):
-        return self.msgs.get(key, default)
+    def log(self, tag, message):
+        """Standardized logging for the engine."""
+        print(f"[{tag}] {message}")
 
     def load_language(self, lang_json):
-        """Loads language and system UI messages from JSON."""
+        """Initializes the linguistic and system environment."""
         try:
             with open(lang_json, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                self.registry = data['registry']
-                self.msgs = data.get('system_messages', {})
-                self.current_lang = data['language']
-                print(self.get_msg("engine_loaded", "[*] Loaded: {}").format(self.current_lang))
+                self.registry = data.get('registry', {})
+                self.system_messages = data.get('system_messages', {})
+                self.current_lang = data.get('language', 'Unknown')
+                
+                msg = self.system_messages.get("engine_loaded", "[*] Environment: {} loaded.").format(self.current_lang)
+                self.log("SYS", msg)
         except Exception as e:
-            print(f"CRITICAL SYSTEM ERROR: {e}")
+            self.log("CRITICAL", f"Language initialization failed: {e}")
 
-    def evaluate_params(self, params):
-        """Advanced Evaluator: Strings, Math, and Variable Logic."""
-        params = params.strip()
-        if not params: return ""
+    def evaluate_expression(self, expr):
+        """Advanced Logic Evaluator with Type Awareness."""
+        expr = expr.strip()
+        if not expr: return None
         
-        # String detection
-        if (params.startswith('"') and params.endswith('"')) or (params.startswith("'") and params.endswith("'")):
-            return params[1:-1]
+        # String Literal Check
+        if (expr.startswith('"') and expr.endswith('"')) or (expr.startswith("'") and expr.endswith("'")):
+            return expr[1:-1]
         
-        # Advanced Math & Logic Evaluator
+        # Boolean/Numeric/Variable Resolution
         try:
-            # We allow basic math and comparisons within the variable context
-            return eval(params, {"__builtins__": None}, self.variables)
+            # Safe evaluation within the variable context
+            return eval(expr, {"__builtins__": None}, self.variables)
         except:
-            # If not a math expression, return as numeric or raw string
-            try:
-                if "." in params: return float(params)
-                return int(params)
-            except ValueError:
-                return self.variables.get(params, params)
+            # Fallback for raw strings or undefined variables
+            return self.variables.get(expr, expr)
 
-    def parse_line(self, line):
+    def parse_instruction(self, line):
+        """Deconstructs the ALIS syntax (.ID Params)."""
         line = line.strip()
         if not line or line.startswith("//"): return None, None
+        
+        # Protocol standard: . followed by 2+ digits
         match = re.match(r"^\.(\d+)\s*(.*)", line)
         if match:
             return match.group(1), match.group(2)
         return None, line
 
-    def execute_file(self, alis_file_path):
-        """The heart of the ALIS Protocol: Block and Logic Execution."""
-        if not os.path.exists(alis_file_path):
-            print(self.get_msg("file_not_found", "File {} not found").format(alis_file_path))
+    def run_command(self, cmd_id, params, line_num):
+        """The Execution Heart: Mapping Logic IDs to Machine Actions."""
+        
+        # 1. Variable Assignment (Logic: Storage)
+        if not cmd_id and "=" in params:
+            parts = params.split("=", 1)
+            var_name = parts[0].strip()
+            self.variables[var_name] = self.evaluate_expression(parts[1])
             return
 
-        print(f"\n" + self.get_msg("exec_start", "Start: {}").format(alis_file_path))
-        with open(alis_file_path, 'r', encoding='utf-8') as f:
+        # 2. Logic Mappings (.ID -> Action)
+        if cmd_id == "06": # PRINT (Standard Output)
+            result = self.evaluate_expression(params)
+            print(f"> {result}")
+            
+        elif cmd_id == "13": # INPUT (Standard Input)
+            prompt = self.system_messages.get("input_prompt", "Input {}: ").format(params)
+            user_input = input(prompt)
+            # Store with auto-type conversion
+            self.variables[params.strip()] = self.evaluate_expression(f"'{user_input}'")
+
+        elif cmd_id == "01": # IF (Flow Control)
+            condition = self.evaluate_expression(params)
+            if not condition:
+                msg = self.system_messages.get("condition_not_met", "Line {} skipped.").format(line_num)
+                self.log("LOG", msg)
+                return "SKIP"
+
+        elif cmd_id == "08": # DEFINE (Block Storage)
+            # Managed in execute_file for block capturing
+            pass
+
+    def execute_file(self, file_path):
+        """Processes the .alis logic script."""
+        if not os.path.exists(file_path):
+            error_msg = self.system_messages.get("file_not_found", "File {} not found.").format(file_path)
+            self.log("ERROR", error_msg)
+            return
+
+        start_msg = self.system_messages.get("exec_start", "Executing: {}").format(file_path)
+        self.log("ALIS", start_msg)
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
                 
-        line_idx = 0
-        while line_idx < len(lines):
-            line = lines[line_idx].strip()
-            cmd_id, params = self.parse_line(line)
+        idx = 0
+        while idx < len(lines):
+            cmd_id, params = self.parse_instruction(lines[idx])
             
-            # --- BLOCK DEFINITION (.08) ---
+            # Block Capture Logic (Functions)
             if cmd_id == "08":
                 func_name = params.strip()
                 self.functions[func_name] = []
-                line_idx += 1
-                while line_idx < len(lines) and not lines[line_idx].strip().startswith(".11"):
-                    self.functions[func_name].append(lines[line_idx])
-                    line_idx += 1
+                idx += 1
+                while idx < len(lines) and not lines[idx].strip().startswith(".11"):
+                    self.functions[func_name].append(lines[idx])
+                    idx += 1
+                self.log("SYS", f"Function '{func_name}' registered.")
+                idx += 1
                 continue
 
-            # --- RUN COMMAND ---
-            self.run_command(cmd_id, params, line_idx + 1)
-            line_idx += 1
+            # Execution
+            status = self.run_command(cmd_id, params, idx + 1)
             
-        print(self.get_msg("exec_finish", "Finished"))
-
-    def run_command(self, cmd_id, params, line_num):
-        """Executes universal Logic IDs."""
-        # VARIABLE ASSIGNMENT (x = y + 5)
-        if not cmd_id and "=" in params:
-            var_name, var_expr = params.split("=", 1)
-            self.variables[var_name.strip()] = self.evaluate_params(var_expr)
-            return
-
-        if cmd_id == "06": # PRINT
-            print(f"[OUTPUT]: {self.evaluate_params(params)}")
+            # Simple IF Skip (Next line skip)
+            if status == "SKIP": idx += 1
             
-        elif cmd_id == "13": # INPUT
-            prompt = self.get_msg("input_prompt", "Input {}: ").format(params)
-            user_val = input(prompt)
-            # Auto-detect if input is a number
-            self.variables[params.strip()] = self.evaluate_params(f"'{user_val}'")
-            
-        elif cmd_id == "01": # IF (Logical Condition)
-            if not self.evaluate_params(params):
-                return "SKIP_NEXT" # For future block-skipping logic
-
-        elif cmd_id == "10": # CALL FUNCTION
-            func_name = params.strip()
-            if func_name in self.functions:
-                for f_line in self.functions[func_name]:
-                    f_cmd, f_params = self.parse_line(f_line)
-                    self.run_command(f_cmd, f_params, "inline")
+            idx += 1
+        
+        finish_msg = self.system_messages.get("exec_finish", "Execution finished.")
+        self.log("ALIS", finish_msg)
 
 if __name__ == "__main__":
-    engine = ALISEngine()
-    # Dynamic Path Setup
+    alis = ALISEngine()
+    # Path configuration for professional GitHub structure
     base = os.path.dirname(__file__)
-    lang = os.path.join(base, "languages/en.json")
-    code = os.path.join(base, "hello_world.alis")
+    lang_p = os.path.join(base, "languages/en.json")
+    code_p = os.path.join(base, "hello_world.alis")
     
-    if os.path.exists(lang) and os.path.exists(code):
-        engine.load_language(lang)
-        engine.execute_file(code)
+    if os.path.exists(lang_p):
+        alis.load_language(lang_p)
+        if os.path.exists(code_p):
+            alis.execute_file(code_p)
