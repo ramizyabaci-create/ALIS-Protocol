@@ -1,4 +1,4 @@
-Python
+python
 import json
 import re
 
@@ -175,3 +175,42 @@ class ALISEngine:
 
     def run_command(self, cmd_id, params, line_num):
         """ID'leri mantığa dönüştüren ana merkez."""
+        
+        # DEĞİŞKEN ATAMA (No ID, contains '=')
+        if not cmd_id and "=" in params:
+            parts = params.split("=", 1)
+            var_name = parts[0].strip()
+            var_val = self.evaluate_params(parts[1])
+            self.variables[var_name] = var_val
+            return
+
+        # .06: PRINT (Ekrana Yazdır)
+        if cmd_id == "06":
+            val = self.evaluate_params(params)
+            print(f"[OUTPUT]: {val}")
+
+        # .01: IF (Basit Koşul)
+        elif cmd_id == "01":
+            # Basit bir eval mantığı (Geliştirilebilir güvenli bir parser ile)
+            try:
+                condition = eval(params, {}, self.variables)
+                if not condition:
+                    print(f"[LOG]: Line {line_num} condition ({params}) not met.")
+                    # Gelecek versiyonda: Bloğu atla mantığı eklenecek
+            except Exception as e:
+                print(f"[SYNTAX ERROR]: Line {line_num} -> {e}")
+
+        # .11: BREAK
+        elif cmd_id == "11":
+            return "BREAK"
+
+# --- ALIS BOOTSTRAP ---
+if __name__ == "__main__":
+    demo_engine = ALISEngine()
+    
+    # 1. Dili Yükle
+    demo_engine.load_language("languages/tr.json")
+    
+    # 2. Örnek dosyayı çalıştır (Önce hello_world.alis'i .06 ile güncellemiş olmalısın)
+    # Eğer dosya yoksa hata vermemesi için kontrol:
+    demo_engine.execute_file("hello_world.alis")
