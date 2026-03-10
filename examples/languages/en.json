@@ -2,6 +2,21 @@ json
 {
   "language": "English",
   "iso_code": "en",
+  json
+{
+  "language": "English",
+  "iso_code": "en",
+  "registry": { ... },
+  "system_messages": {
+      "engine_loaded": "[*] ALIS Engine: {} environment loaded successfully.",
+      "exec_start": "--- ALIS EXECUTION START: {} ---",
+      "exec_finish": "--- ALIS EXECUTION FINISHED ---",
+      "file_not_found": "[ERROR]: File {} not found.",
+      "var_undefined": "[PROTECTION]: Variable '{}' is not defined yet.",
+      "type_error": "[TYPE GUARD]: Logic mismatch! {}",
+      "input_prompt": "[INPUT required for {}]: "
+  }
+}
   "registry": {
     "01": "if",
     "02": "else",
