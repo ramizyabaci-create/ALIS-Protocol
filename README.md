@@ -1,3 +1,4 @@
+"For deep technical details, check our Technical Architecture."
 # ALIS-Protocol
 Agnostic Logic Identification System - Decoupling Programming Logic from English Syntax.
 🚀 ALIS: Agnostic Logic Identification System (Universal Code Protocol)
