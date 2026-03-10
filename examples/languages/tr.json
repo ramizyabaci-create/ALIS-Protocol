@@ -1,0 +1,12 @@
+json
+{
+  "language": "Turkish",
+  "iso_code": "tr",
+  "registry": {
+    "101": "yazdir",
+    "102": "eger",
+    "103": "degilse",
+    "104": "iken",
+    "105": "tanimla"
+  }
+}
