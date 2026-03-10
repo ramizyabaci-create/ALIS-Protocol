@@ -58,3 +58,4 @@ json
     "condition_not_met": "[BİLGİ]: Satır {} koşulu ({}) sağlanmadı.",
     "syntax_error": "[SÖZDİZİMİ HATASI]: Satır {} -> {}"
   }
+"var_undefined": "[KORUMA]: '{}' isimli bir degisken henüz tanimlanmamis."
