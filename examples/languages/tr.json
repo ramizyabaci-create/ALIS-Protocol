@@ -49,3 +49,12 @@ json
     "44": "esittir"
   }
 }
+ "system_messages": {
+    "engine_loaded": "[*] ALIS Motoru: {} ortamı başarıyla yüklendi.",
+    "exec_start": "--- ALIS YÜRÜTME BAŞLADI: {} ---",
+    "exec_finish": "--- ALIS YÜRÜTME TAMAMLANDI ---",
+    "file_not_found": "[HATA]: {} dosyası bulunamadı.",
+    "input_prompt": "[GİRİŞ {} için bekleniyor]: ",
+    "condition_not_met": "[BİLGİ]: Satır {} koşulu ({}) sağlanmadı.",
+    "syntax_error": "[SÖZDİZİMİ HATASI]: Satır {} -> {}"
+  }
