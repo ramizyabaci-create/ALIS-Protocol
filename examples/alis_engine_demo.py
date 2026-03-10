@@ -32,6 +32,6 @@ def run_alis_demo(alis_file, lang_json):
     except FileNotFoundError:
         print(f"Error: Could not find {alis_file} or {lang_json}")
 
-# --- TEST ---
-# Simulating the bridge: ID 101 from hello_world.alis to Turkish
-run_alis_demo("examples/hello_world.alis", "examples/languages/tr.json")
+--- TEST ---
+# Kod zaten 'examples' klasörünün içinde olduğu için dosya isimlerini direkt yazıyoruz:
+run_alis_demo("hello_world.alis", "languages/tr.json")
