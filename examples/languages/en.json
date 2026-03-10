@@ -49,3 +49,11 @@ json
     "44": "is"
   }
 }
+ "system_messages": {
+    "engine_loaded": "[*] ALIS Engine: {} environment loaded successfully.",
+    "exec_start": "--- ALIS EXECUTION START: {} ---",
+    "exec_finish": "--- ALIS EXECUTION FINISHED ---",
+    "file_not_found": "[ERROR]: File {} not found.",
+    "input_prompt": "[INPUT required for {}]: ",
+    "condition_not_met": "[LOG]: Line {} condition ({}) not met.",
+    "syntax_error": "[SYNTAX ERROR]: Line {} -> {}"
