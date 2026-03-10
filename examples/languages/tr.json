@@ -47,15 +47,17 @@ json
     "42": "degil",
     "43": "icinde",
     "44": "esittir"
+  },
+  "system_messages": {
+    "engine_loaded": "[*] ALIS Motoru: {} ortami basariyla yuklendi.",
+    "exec_start": "--- ALIS YURUTME BASLADI: {} ---",
+    "exec_finish": "--- ALIS YURUTME TAMAMLANDI ---",
+    "file_not_found": "[HATA]: {} dosyasi bulunamadi.",
+    "var_undefined": "[KORUMA]: '{}' degiskeni henuz tanimlanmamis.",
+    "type_error": "[TIP KORUMASI]: Mantik uyusmazligi! {}",
+    "input_prompt": "[GIRIS {} icin bekleniyor]: ",
+    "condition_not_met": "[LOG]: Satir {} kosulu ({}) saglanmadi.",
+    "syntax_error": "[SOZDIZIMI HATASI]: Satir {} -> {}"
   }
 }
- "system_messages": {
-    "engine_loaded": "[*] ALIS Motoru: {} ortamı başarıyla yüklendi.",
-    "exec_start": "--- ALIS YÜRÜTME BAŞLADI: {} ---",
-    "exec_finish": "--- ALIS YÜRÜTME TAMAMLANDI ---",
-    "file_not_found": "[HATA]: {} dosyası bulunamadı.",
-    "input_prompt": "[GİRİŞ {} için bekleniyor]: ",
-    "condition_not_met": "[BİLGİ]: Satır {} koşulu ({}) sağlanmadı.",
-    "syntax_error": "[SÖZDİZİMİ HATASI]: Satır {} -> {}"
-  }
-"var_undefined": "[KORUMA]: '{}' isimli bir degisken henüz tanimlanmamis."
+  
