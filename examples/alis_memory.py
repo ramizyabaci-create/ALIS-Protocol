@@ -2,38 +2,51 @@ import json
 
 class ALISMemory:
     def __init__(self):
-        # Initial memory with system constants
+        # Global constants and versioning
         self.variables = {
-            "__VERSION__": "2.2.0",
+            "__VERSION__": "2.4.0",
             "PI": 3.14159,
             "TRUE": True,
             "FALSE": False
         }
-        self.functions = {}  # Store code blocks
-        self.registry = {}   # ID mappings
-        self.msgs = {}       # System UI messages
+        self.functions = {}  
+        self.registry = {}   
+        self.msgs = {}       # Localized system messages
 
     def evaluate(self, expr):
-        """Advanced Evaluator: Strings, Math, and Variable Resolution."""
+        """Advanced Evaluator with Undefined Variable Protection."""
         if not expr: return None
         expr = str(expr).strip()
         
-        # String detection (Quotes)
+        # 1. String Literal Check
         if (expr.startswith('"') and expr.endswith('"')) or (expr.startswith("'") and expr.endswith("'")):
             return expr[1:-1]
         
-        # Mathematical and Logical Evaluator
+        # 2. Logic & Math Evaluation
         try:
-            # Safe evaluation within the engine's memory context
+            # We use a restricted environment for security
             return eval(expr, {"__builtins__": None}, self.variables)
-        except:
-            # Fallback: Return stored variable or raw string
+        except NameError as e:
+            # EXTRACT: Which variable caused the error?
+            var_name = str(e).split("'")[1]
+            # Use localized message or fallback to default
+            err_template = self.msgs.get("var_undefined", "[PROTECTION]: Variable '{}' is not defined yet.")
+            print(err_template.format(var_name))
+            return None # Prevent crash, return None
+        except Exception:
+            # If it's not math/logic, it might be a raw string or a single variable
             return self.variables.get(expr, expr)
 
     def set_var(self, name, value):
-        """Stores a variable in memory."""
+        """Safely stores a variable after evaluating its value."""
         self.variables[name.strip()] = self.evaluate(value)
 
     def get_var(self, name):
-        """Retrieves a variable from memory."""
-        return self.variables.get(name.strip(), f"UNDEFINED: {name}")
+        """Retrieves a variable or provides protection feedback."""
+        val = self.variables.get(name.strip())
+        if val is None:
+            err_template = self.msgs.get("var_undefined", "[PROTECTION]: Variable '{}' not found.")
+            print(err_template.format(name))
+            return None
+        return val
+     
