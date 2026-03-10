@@ -57,3 +57,4 @@ json
     "input_prompt": "[INPUT required for {}]: ",
     "condition_not_met": "[LOG]: Line {} condition ({}) not met.",
     "syntax_error": "[SYNTAX ERROR]: Line {} -> {}"
+"var_undefined": "[PROTECTION]: Variable '{}' is not defined yet."
