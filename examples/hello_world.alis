@@ -1,1 +1,24 @@
-101 "Hello World"
+import json
+
+# Bu fonksiyon, sayısal ID'leri metne çeviren "Köprü"dür.
+def translate_alis(code_line, lang_file):
+    # Dil dosyasını (JSON) yükle
+    with open(lang_file, 'r') as f:
+        lang_data = json.load(f)
+    
+    registry = lang_data['registry']
+    parts = code_line.split(" ", 1)
+    token_id = parts[0]
+    content = parts[1] if len(parts) > 1 else ""
+
+    # ID'yi sözlükte bul ve karşılığını getir
+    command = registry.get(token_id, "UNKNOWN_ID")
+    return f"{command} {content}"
+
+# --- TEST ---
+# Örnek: "101 'Merhaba Dünya'" satırını Türkçe sözlükle oku
+test_line = "101 'Merhaba Dünya'"
+result = translate_alis(test_line, "languages/tr.json")
+
+print(f"ALIS Raw Code: {test_line}")
+print(f"Translated View: {result}")
