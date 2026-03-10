@@ -1,0 +1,12 @@
+json
+{
+  "language": "English",
+  "iso_code": "en",
+  "registry": {
+    "101": "print",
+    "102": "if",
+    "103": "else",
+    "104": "while",
+    "105": "define"
+  }
+}
