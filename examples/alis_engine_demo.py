@@ -5,85 +5,105 @@ import os
 
 class ALISEngine:
     def __init__(self):
-        self.variables = {}  # In-memory storage for user variables
-        self.registry = {}   # Command mapping for the selected language
+        self.variables = {}
+        self.registry = {}
+        self.msgs = {}  # System messages from JSON
         self.current_lang = ""
 
+    def get_msg(self, key, default):
+        """Fetches a localized message or returns default."""
+        return self.msgs.get(key, default)
+
     def load_language(self, lang_json):
-        """Loads the language pack and prepares the engine environment."""
+        """Loads logic mapping and UI messages from JSON."""
         try:
             with open(lang_json, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 self.registry = data['registry']
+                self.msgs = data.get('system_messages', {})
                 self.current_lang = data['language']
-                print(f"[*] ALIS Engine: {self.current_lang} environment loaded successfully.")
+                # Localized: Loaded message
+                print(self.get_msg("engine_loaded", "[*] Loaded: {}").format(self.current_lang))
         except Exception as e:
-            print(f"[ERROR]: Could not load language file: {e}")
+            print(f"CRITICAL SYSTEM ERROR: {e}")
 
     def evaluate_params(self, params):
-        """Analyzes data type: String, Numeric, or Variable reference."""
+        """Identifies types: Strings, Math, or Variable Memory."""
         params = params.strip()
         if not params: return ""
-        
-        # String detection (Quotes)
         if (params.startswith('"') and params.endswith('"')) or (params.startswith("'") and params.endswith("'")):
             return params[1:-1]
         
-        # Basic Mathematical Operation detection (e.g., x + 5)
+        # Safe Basic Math with Variables
         if any(op in params for op in ['+', '-', '*', '/']):
             try:
-                # Using a safe eval-like approach for basic math with memory variables
                 return eval(params, {"__builtins__": None}, self.variables)
-            except:
-                pass
+            except: pass
 
-        # Numeric detection
         try:
             if "." in params: return float(params)
             return int(params)
         except ValueError:
-            # Variable detection (Fetch from memory)
             return self.variables.get(params, params)
 
     def parse_line(self, line):
-        """Extracts Command ID and Parameters from a line of code."""
+        """Splits syntax into Prefix, ID and Params."""
         line = line.strip()
         if not line or line.startswith("//"): return None, None
-        
-        # Match .ID format (e.g., .01, .06)
         match = re.match(r"^\.(\d+)\s*(.*)", line)
         if match:
             return match.group(1), match.group(2)
         return None, line
 
     def execute_file(self, alis_file_path):
-        """Executes an .alis file line by line."""
+        """Main execution engine using localized strings."""
         if not os.path.exists(alis_file_path):
-            print(f"[ERROR]: File {alis_file_path} not found.")
+            # Localized: File not found
+            print(self.get_msg("file_not_found", "File {} not found").format(alis_file_path))
             return
 
-        print(f"\n--- ALIS EXECUTION START: {alis_file_path} ---")
+        # Localized: Start Execution
+        print(f"\n" + self.get_msg("exec_start", "Start: {}").format(alis_file_path))
+        
         with open(alis_file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
                 
         line_idx = 0
+        loop_start = -1
+        loop_condition = ""
+
         while line_idx < len(lines):
             line = lines[line_idx].strip()
             cmd_id, params = self.parse_line(line)
             
-            if cmd_id:
-                result = self.run_command(cmd_id, params, line_idx + 1)
-                if result == "BREAK": break
-            elif params and "=" in params:
-                self.run_command(None, params, line_idx + 1)
+            # --- LOOP LOGIC (WHILE .05) ---
+            if cmd_id == "05":
+                loop_start = line_idx
+                loop_condition = params
+                try:
+                    if not eval(loop_condition, {"__builtins__": None}, self.variables):
+                        while line_idx < len(lines) and ".11" not in lines[line_idx]:
+                            line_idx += 1
+                        line_idx += 1
+                        continue
+                except: pass
+
+            # --- RUN COMMAND ---
+            result = self.run_command(cmd_id, params, line_idx + 1)
+
+            # --- END BLOCK (.11) ---
+            if cmd_id == "11" and loop_start != -1:
+                line_idx = loop_start
+                continue
             
             line_idx += 1
-        print("--- ALIS EXECUTION FINISHED ---")
+            
+        # Localized: Finish Execution
+        print(self.get_msg("exec_finish", "Finished"))
 
     def run_command(self, cmd_id, params, line_num):
-        """Core logic handler for ALIS IDs."""
-        
-        # VARIABLE ASSIGNMENT (No ID, contains '=')
+        """Logic execution with localized user feedback."""
+        # VARIABLE ASSIGNMENT
         if not cmd_id and "=" in params:
             parts = params.split("=", 1)
             var_name = parts[0].strip()
@@ -91,41 +111,32 @@ class ALISEngine:
             self.variables[var_name] = var_val
             return
 
-        # .06: PRINT (Standard Output)
-        if cmd_id == "06":
-            val = self.evaluate_params(params)
-            print(f"[OUTPUT]: {val}")
-
-        # .13: INPUT (Standard Input) - NEW!
-        elif cmd_id == "13":
-            var_name = params.strip()
-            user_val = input(f"[INPUT required for {var_name}]: ")
-            self.variables[var_name] = self.evaluate_params(f"'{user_val}'")
-
-        # .01: IF (Conditional Logic)
-        elif cmd_id == "01":
+        if cmd_id == "06": # PRINT
+            print(f"[OUTPUT]: {self.evaluate_params(params)}")
+            
+        elif cmd_id == "13": # INPUT
+            # Localized: Input prompt
+            prompt = self.get_msg("input_prompt", "Input {}: ").format(params)
+            user_val = input(prompt)
+            self.variables[params.strip()] = self.evaluate_params(f"'{user_val}'")
+            
+        elif cmd_id == "01": # IF
             try:
                 condition = eval(params, {"__builtins__": None}, self.variables)
                 if not condition:
-                    print(f"[LOG]: Line {line_num} condition ({params}) not met.")
+                    # Localized: Condition skipped
+                    print(self.get_msg("condition_not_met", "Skip line {}").format(line_num, params))
             except Exception as e:
-                print(f"[SYNTAX ERROR]: Line {line_num} -> {e}")
+                # Localized: Syntax Error
+                print(self.get_msg("syntax_error", "Error at {}: {}").format(line_num, e))
 
-        # .11: BREAK
-        elif cmd_id == "11":
-            return "BREAK"
-
-# --- ALIS BOOTSTRAP ---
 if __name__ == "__main__":
-    demo_engine = ALISEngine()
+    engine = ALISEngine()
+    # Testing for Global Versatility
+    # Change to 'tr.json' and you'll see every error/system message in Turkish!
+    lang_file = "languages/en.json" 
+    code_file = "hello_world.alis"
     
-    # Set paths relative to script location
-    lang_path = "languages/en.json"
-    code_path = "hello_world.alis"
-    
-    # Check if files exist before running to avoid crash
-    if os.path.exists(lang_path) and os.path.exists(code_path):
-        demo_engine.load_language(lang_path)
-        demo_engine.execute_file(code_path)
-    else:
-        print("[SYSTEM]: Please ensure hello_world.alis and languages/en.json are in the same folder.")
+    if os.path.exists(lang_file):
+        engine.load_language(lang_file)
+        engine.execute_file(code_file)
